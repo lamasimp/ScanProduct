@@ -7,6 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Image x:Name="webcamImage" Stretch="Uniform" Width="400" Margin="200,46,200,17"/>
 
+        <TextBox x:Name="inputTextBox" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Width="400"/>
     </Grid>
 </Window>
