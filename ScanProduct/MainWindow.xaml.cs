@@ -8,27 +8,26 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using ZXing;
 using ZXing.Common;
+using ScanProduct.TextToSpeedGoogle;
+using ScanProduct.Services;
+using System.Windows.Input;
+using System.Threading.Tasks;
 
 namespace ScanProduct
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-
+        private readonly ITextToSpeed _textToSpeed;
         private FilterInfoCollection videoDevices;
         private VideoCaptureDevice videoSource;
-        //private BarcodeReader barcodeReader;
-
-
+        private bool isScanning = false;
         public MainWindow()
         {
+            _textToSpeed = new TextToSpeedService();
             InitializeComponent();
             InitializeCamera();
-            //InitializeBarcodeReader();
         }
-
+        // Khởi động camera
         private void InitializeCamera()
         {
             videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
@@ -44,62 +43,6 @@ namespace ScanProduct
                 MessageBox.Show("No video devices found.");
             }
         }
-        //private void InitializeBarcodeReader()
-        //{
-        //    barcodeReader = new BarcodeReader();
-        //}
-
-        private void VideoSource_NewFrame(object sender, NewFrameEventArgs eventArgs)
-        {
-            using (Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone())
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    webcamImage.Source = ConvertBitmapToBitmapSource(bitmap);
-
-                    // Chuyển đổi Bitmap thành mảng byte
-                   
-                    BarcodeReader reader = new BarcodeReader();
-
-                    // Thiết lập cài đặt cho việc quét mã vạch (nếu cần)
-                    reader.Options = new DecodingOptions
-                    {
-                        TryHarder = true, // Thử cách quét khó hơn để tìm mã vạch trong các hình ảnh phức tạp hơn
-                        PossibleFormats = new BarcodeFormat[] { BarcodeFormat.CODE_39, BarcodeFormat.CODE_128 } // Các định dạng mã vạch bạn muốn quét (ví dụ: CODE_39)
-                    };
-
-                    // Quét mã vạch từ bitmap
-                    Result result = reader.Decode(bitmap);
-
-                    // Kiểm tra nếu đã quét thành công
-                    if (result != null)
-                    {
-                        string barcodeText = result.Text;
-                        inputTextBox.Text = barcodeText;
-
-                    }
-                    else
-                    {
-                        // Xử lý khi không quét được mã vạch
-                        // Ví dụ: thông báo cho người dùng rằng không tìm thấy mã vạch
-                        // MessageBox.Show("Không tìm thấy mã vạch");
-                    }
-
-                });
-            }
-        }
-
-        private byte[] ConvertBitmapToByteArray(Bitmap bitmap)
-        {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                bitmap.Save(stream, ImageFormat.Png);
-                return stream.ToArray();
-            }
-        }
-
-
-
         private BitmapSource ConvertBitmapToBitmapSource(Bitmap bitmap)
         {
             using (var memoryStream = new MemoryStream())
@@ -116,6 +59,51 @@ namespace ScanProduct
                 return bitmapImage;
             }
         }
+        // Khởi động camera
+        private void VideoSource_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+            if (!isScanning)
+            {
+                using (Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone())
+                {
+                    Dispatcher.Invoke(async () =>
+                    {
+                        webcamImage.Source = ConvertBitmapToBitmapSource(bitmap);
+                        BarcodeReader reader = new BarcodeReader();
+                        reader.Options = new DecodingOptions
+                        {
+                            TryHarder = true,
+                            PossibleFormats = new BarcodeFormat[] { BarcodeFormat.CODE_39, BarcodeFormat.EAN_13 }
+                        };
+                        Result result = reader.Decode(bitmap);
+
+                        if (result != null)
+                        {
+                            string barcodeText = result.Text;
+
+                            if (barcodeText.Length == 8)
+                            {
+                                isScanning = true;
+                                inputTextBox.Text = barcodeText;
+                                await _textToSpeed.PlayMp3("SourdScan.mp3");
+                                //_textToSpeed.SpeedGoogle("Tổng hóa đơn thanh toán của bạn là 200000 đồng");
+                                isScanning = false;
+
+                            }
+                            else
+                            {
+                                isScanning = false;
+                            }
+                        }
+                    });
+                }
+            }
+            else
+            {
+                // Nếu quá trình quét đang diễn ra, không thực hiện gì cả
+            }
+        }
+
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {

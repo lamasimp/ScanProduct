@@ -13,6 +13,9 @@
     <PackageReference Include="AForge.Math" Version="2.2.5" />
     <PackageReference Include="AForge.Video" Version="2.2.5" />
     <PackageReference Include="AForge.Video.DirectShow" Version="2.2.5" />
+    <PackageReference Include="Google.Cloud.TextToSpeech.V1" Version="3.4.0" />
+    <PackageReference Include="Grpc.Core" Version="2.46.6" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.3" />
     <PackageReference Include="ZXing.Net" Version="0.14.0" />
   </ItemGroup>
